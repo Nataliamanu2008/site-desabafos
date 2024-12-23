@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espaço de Desabafos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #6c63ff;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #6c63ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #5750e8;
+        }
+
+        .desabafo {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+
+        .categoria {
+            font-size: 12px;
+            color: #6c63ff;
+        }
+
+        .reacoes {
+            margin-top: 10px;
+        }
+
+        .reacoes button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Espaço de Desabafos</h1>
+        <p>Compartilhe seus pensamentos e sentimentos de forma anônima.</p>
+    </header>
+
+    <div class="container">
+        <h2>Escreva seu desabafo</h2>
+        <textarea id="novoDesabafo" placeholder="Digite seu desabafo aqui..."></textarea>
+        <select id="categoria">
+            <option value="geral">Geral</option>
+            <option value="alegria">Alegria</option>
+            <option value="tristeza">Tristeza</option>
+            <option value="desafios">Desafios</option>
+        </select>
+        <button onclick="adicionarDesabafo()">Publicar</button>
+    </div>
+
+    <div class="container">
+        <h2>Desabafos Recentes</h2>
+        <div id="listaDesabafos">
+            <!-- Os desabafos aparecerão aqui -->
+        </div>
+    </div>
+
+    <script>
+        const listaDesabafos = document.getElementById('listaDesabafos');
+
+        async function carregarDesabafos() {
+            const resposta = await fetch('/api/desabafos');
+            const desabafos = await resposta.json();
+
+            listaDesabafos.innerHTML = '';
+            desabafos.forEach(({ texto, categoria }) => {
+                const desabafoDiv = document.createElement('div');
+                desabafoDiv.className = 'desabafo';
+
+                const categoriaSpan = document.createElement('span');
+                categoriaSpan.className = 'categoria';
+                categoriaSpan.textContent = `Categoria: ${categoria}`;
+
+                const textoP = document.createElement('p');
+                textoP.textContent = texto;
+
+                const reacoesDiv = document.createElement('div');
+                reacoesDiv.className = 'reacoes';
+
+                const botaoGostei = document.createElement('button');
+                botaoGostei.textContent = 'Gostei ❤️';
+                botaoGostei.onclick = () => alert('Você curtiu este desabafo!');
+
+                reacoesDiv.appendChild(botaoGostei);
+
+                desabafoDiv.appendChild(categoriaSpan);
+                desabafoDiv.appendChild(textoP);
+                desabafoDiv.appendChild(reacoesDiv);
+
+                listaDesabafos.appendChild(desabafoDiv);
+            });
+        }
+
+        async function adicionarDesabafo() {
+            const texto = document.getElementById('novoDesabafo').value;
+            const categoria = document.getElementById('categoria').value;
+
+            if (texto.trim() === '') {
+                alert('Por favor, escreva algo antes de publicar.');
+                return;
+            }
+
+            await fetch('/api/desabafos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ texto, categoria }),
+            });
+
+            document.getElementById('novoDesabafo').value = '';
+            carregarDesabafos();
+        }
+
+        carregarDesabafos();
+    </script>
+</body>
+</html>
+
+<!-- Back-End Code (Node.js Example) -->
+<!-- Save this as server.js -->
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const app = express();
+
+app.use(cors());
+app.use(bodyParser.json());
+
+let desabafos = [];
+
+app.get('/api/desabafos', (req, res) => {
+    res.json(desabafos);
+});
+
+app.post('/api/desabafos', (req, res) => {
+    const { texto, categoria } = req.body;
+    desabafos.push({ texto, categoria });
+    res.status(201).send();
+});
+
+app.listen(3000, () => {
+    console.log('Servidor rodando em http://localhost:3000');
+});
